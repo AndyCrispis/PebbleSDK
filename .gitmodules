@@ -1,0 +1,3 @@
+[submodule "arm-cs-tools"]
+	path = arm-cs-tools
+	url = https://github.com/agherzan/arm-cs-tools-fedora-x86-64.git
