@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.util.Base64;
+import android.util.Log;
 import com.getpebble.android.kit.Constants.*;
 import com.getpebble.android.kit.util.PebbleDictionary;
 import com.google.common.primitives.UnsignedInteger;
@@ -639,6 +640,11 @@ public final class PebbleKit {
         private final UUID subscribedUuid;
 
         /**
+         * The last data ID we've seen. Ignore subsequent intents for this same ID.
+         */
+        private int lastDataId;
+
+        /**
          * Instantiates a new pebble nack receiver.
          *
          * @param subscribedUuid
@@ -716,6 +722,80 @@ public final class PebbleKit {
         }
 
         /**
+         * Called when a session has been finished on the watch and all data has been transmitted by pebble.apk
+         *
+         * @param context
+         *         The BroadcastReceiver's context.
+         * @param logUuid
+         *         The UUID that uniquely identifies a data log.
+         * @param timestamp
+         *         The timestamp when a data log was first created.
+         * @param tag
+         *         The user-defined tag for the corresponding data log.
+         */
+        public void onFinishSession(final Context context, UUID logUuid, final UnsignedInteger timestamp,
+                                    final UnsignedInteger tag) {
+            // Do nothing by default
+        }
+
+        private void handleReceiveDataIntent(final Context context, final Intent intent, final UUID logUuid,
+                                             final UnsignedInteger timestamp, final UnsignedInteger tag) {
+            final int dataId = intent.getIntExtra(PBL_DATA_ID, -1);
+            if (dataId < 0) throw new IllegalArgumentException();
+
+            Log.i("pebble", "DataID: " + dataId + " LastDataID: " + lastDataId);
+
+            if (dataId == lastDataId) {
+                // If we see the same dataId multiple times, just ignore it.
+                return;
+            }
+
+            final PebbleDataType type = PebbleDataType.fromByte(intent.getByteExtra(PBL_DATA_TYPE, PebbleDataType.INVALID.ord));
+            if (type == null) throw new IllegalArgumentException();
+
+            switch (type) {
+                case BYTES:
+                    byte[] bytes = Base64.decode(intent.getStringExtra(PBL_DATA_OBJECT), Base64.NO_WRAP);
+                    if (bytes == null) {
+                        throw new IllegalArgumentException();
+                    }
+
+                    receiveData(context, logUuid, timestamp, tag, bytes);
+                    break;
+                case UINT:
+                    UnsignedInteger uint = (UnsignedInteger) intent.getSerializableExtra(PBL_DATA_OBJECT);
+                    if (uint == null) {
+                        throw new IllegalArgumentException();
+                    }
+
+                    receiveData(context, logUuid, timestamp, tag, uint);
+                    break;
+                case INT:
+                    Integer i = (Integer) intent.getSerializableExtra(PBL_DATA_OBJECT);
+                    if (i == null) {
+                        throw new IllegalArgumentException();
+                    }
+
+                    receiveData(context, logUuid, timestamp, tag, i.intValue());
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid type:" + type.toString());
+            }
+
+            lastDataId = dataId;
+
+            final Intent ackIntent = new Intent(INTENT_DL_ACK_DATA);
+            ackIntent.putExtra(DATA_LOG_UUID, logUuid);
+            ackIntent.putExtra(PBL_DATA_ID, dataId);
+            context.sendBroadcast(ackIntent);
+        }
+
+        private void handleFinishSessionIntent(final Context context, final Intent intent, final UUID logUuid,
+                                               final UnsignedInteger timestamp, final UnsignedInteger tag) {
+            onFinishSession(context, logUuid, timestamp, tag);
+        }
+
+        /**
          * {@inheritDoc}
          */
         @Override
@@ -727,13 +807,11 @@ public final class PebbleKit {
                 return;
             }
 
-            final UUID logUuid;
-            final UnsignedInteger timestamp;
-            final UnsignedInteger tag;
-            final int dataId;
-            final PebbleDataType type;
-
             try {
+                final UUID logUuid;
+                final UnsignedInteger timestamp;
+                final UnsignedInteger tag;
+
                 logUuid = (UUID) intent.getSerializableExtra(DATA_LOG_UUID);
                 if (logUuid == null) throw new IllegalArgumentException();
 
@@ -742,50 +820,16 @@ public final class PebbleKit {
 
                 tag = (UnsignedInteger) intent.getSerializableExtra(DATA_LOG_TAG);
                 if (tag == null) throw new IllegalArgumentException();
-                dataId = intent.getIntExtra(PBL_DATA_ID, -1);
-                if (dataId < 0) throw new IllegalArgumentException();
 
-                type = PebbleDataType.fromByte(intent.getByteExtra(PBL_DATA_TYPE, PebbleDataType.INVALID.ord));
-                if (type == null) throw new IllegalArgumentException();
-
-                switch (type) {
-                    case BYTES:
-                        byte[] bytes = Base64.decode(intent.getStringExtra(PBL_DATA_OBJECT), Base64.NO_WRAP);
-                        if (bytes == null) {
-                            throw new IllegalArgumentException();
-                        }
-
-                        receiveData(context, logUuid, timestamp, tag, bytes);
-                        break;
-                    case UINT:
-                        UnsignedInteger uint = (UnsignedInteger) intent.getSerializableExtra(PBL_DATA_OBJECT);
-                        if (uint == null) {
-                            throw new IllegalArgumentException();
-                        }
-
-                        receiveData(context, logUuid, timestamp, tag, uint);
-                        break;
-                    case INT:
-                        Integer i = (Integer) intent.getSerializableExtra(PBL_DATA_OBJECT);
-                        if (i == null) {
-                            throw new IllegalArgumentException();
-                        }
-
-                        receiveData(context, logUuid, timestamp, tag, i.intValue());
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid type:" + type.toString());
+                if (intent.getAction() == INTENT_DL_RECEIVE_DATA) {
+                    handleReceiveDataIntent(context, intent, logUuid, timestamp, tag);
+                } else if (intent.getAction() == INTENT_DL_FINISH_SESSION) {
+                    handleFinishSessionIntent(context, intent, logUuid, timestamp, tag);
                 }
-
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
                 return;
             }
-
-            final Intent ackIntent = new Intent(INTENT_DL_ACK_DATA);
-            ackIntent.putExtra(DATA_LOG_UUID, logUuid);
-            ackIntent.putExtra(PBL_DATA_ID, dataId);
-            context.sendBroadcast(ackIntent);
         }
     }
 
@@ -807,7 +851,12 @@ public final class PebbleKit {
      */
     public static BroadcastReceiver registerDataLogReceiver(final Context context,
                                                             final PebbleDataLogReceiver receiver) {
-        return registerBroadcastReceiverInternal(context, INTENT_DL_RECEIVE_DATA, receiver);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(INTENT_DL_RECEIVE_DATA);
+        filter.addAction(INTENT_DL_FINISH_SESSION);
+        context.registerReceiver(receiver, filter);
+
+        return receiver;
     }
 
     /**

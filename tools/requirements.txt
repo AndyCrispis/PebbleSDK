@@ -1,6 +1,6 @@
 twisted==12.0.0
 autobahn==0.5.14
-websocket-client==0.11.0
+websocket-client==0.12.0
 sh==1.08
 pyserial>=2.6
 Pillow>=2.2.1

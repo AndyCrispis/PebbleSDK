@@ -52,7 +52,7 @@ class PblWafCommand(PblCommand):
 
     ###########################################################################
     def waf_path(self, args):
-        return os.path.join(os.path.join(self.sdk_path(args), 'Pebble'), 'waf')
+        return os.path.join(self.sdk_path(args), 'Pebble', 'waf')
     
     
     ###########################################################################
@@ -270,3 +270,29 @@ class PblCleanCommand(PblWafCommand):
     name = 'clean'
     help = 'Clean your Pebble project'
     waf_cmds = 'distclean'
+
+
+class PblAnalyzeSizeCommand(PblCommand):
+    name = 'analyze-size'
+    help = 'Analyze the size of your Pebble app'
+
+    def configure_subparser(self, parser):
+        PblCommand.configure_subparser(self, parser)
+        parser.add_argument('elf_path', type=str, nargs='?', default='build/pebble-app.elf',
+                help='Path to the elf file to analyze')
+        parser.add_argument('--summary', action='store_true', help='Display a single line per section')
+        parser.add_argument('--verbose', action='store_true', help='Display a per-symbol breakdown')
+
+    @requires_project_dir
+    def run(self, args):
+        sys.path.append(os.path.join(self.sdk_path(args), 'Pebble', 'tools'))
+        import analyze_static_memory_usage
+
+        sections = analyze_static_memory_usage.make_sections_dict('bdt')
+
+        analyze_static_memory_usage.analyze_elf(args.elf_path, sections)
+
+        for s in sections.itervalues():
+            s.pprint(args.summary, args.verbose)
+
+

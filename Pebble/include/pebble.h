@@ -4465,6 +4465,12 @@ void bitmap_layer_destroy(BitmapLayer* bitmap_layer);
 //! @return The "root" Layer of the bitmap layer.
 Layer* bitmap_layer_get_layer(const BitmapLayer *bitmap_layer);
 
+//! Gets the pointer to the bitmap image that the BitmapLayer is using.
+//!
+//! @param bitmap_layer The BitmapLayer for which to get the bitmap image
+//! @return A pointer to the bitmap image that the BitmapLayer is using
+const GBitmap* bitmap_layer_get_bitmap(BitmapLayer *bitmap_layer);
+
 //! Sets the bitmap onto the BitmapLayer. The bitmap is set by reference (no deep
 //! copy), thus the caller of this function has to make sure the bitmap is kept
 //! in memory.

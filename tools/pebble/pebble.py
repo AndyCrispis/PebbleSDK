@@ -576,7 +576,7 @@ class Pebble(object):
                 and self._ws_client._response == 0:
             log.info("Installation successful")
             return True
-        log.debug("WS Operation failed with response %s" % 
+        log.debug("WS Operation failed with response %s" %
                                         self._ws_client._response)
         log.error("Failed to install %s" % repr(bundle_path))
         return False
@@ -585,7 +585,7 @@ class Pebble(object):
     def get_phone_info(self):
         self._ws_client = WSClient()
         # The first byte is reserved for future use as a protocol version ID
-        #  and must be 0 for now. 
+        #  and must be 0 for now.
         data = pack("!b", 0)
         self._ser.write(data, ws_cmd=WebSocketPebble.WS_CMD_PHONE_INFO)
         self._ws_client.listen()
@@ -1141,8 +1141,8 @@ class Pebble(object):
         # Then phone capabilities, android app adds TELEPHONY and SMS,
         # and the phone type (we know android works for now)
         remote = remote_cap["TELEPHONY"] | remote_cap["SMS"] | os["ANDROID"]
-        
-        # Version 2 of the phone version response. 
+
+        # Version 2 of the phone version response.
         response_vers = 2
         major = 2
         minor = 0
@@ -1231,7 +1231,8 @@ class WSClient(object):
       self._topic = None
       self._received = False
       self._error = False
-      self._timer = threading.Timer(30.0, self.timeout)
+      # Call the timeout handler after the timeout.
+      self._timer = threading.Timer(90.0, self.timeout)
 
     def timeout(self):
       if (self._state != self.states["LISTENING"]):

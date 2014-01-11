@@ -17,7 +17,9 @@ try:
                                             InvalidProjectException, 
                                             OutdatedProjectException)
     from pebble.PblProjectConverter import PblProjectConverter
-    from pebble.PblBuildCommand     import PblBuildCommand, PblCleanCommand
+    from pebble.PblBuildCommand     import (PblBuildCommand,
+                                            PblCleanCommand,
+                                            PblAnalyzeSizeCommand)
     from pebble.LibPebblesCommand   import *
 except Exception as e:
     logging.basicConfig(format='[%(levelname)-8s] %(message)s', 
@@ -34,6 +36,7 @@ class PbSDKShell:
         self.commands.append(PblProjectConverter())
         self.commands.append(PblBuildCommand())
         self.commands.append(PblCleanCommand())
+        self.commands.append(PblAnalyzeSizeCommand())
         self.commands.append(PblInstallCommand())
         self.commands.append(PblPingCommand())
         self.commands.append(PblListCommand())

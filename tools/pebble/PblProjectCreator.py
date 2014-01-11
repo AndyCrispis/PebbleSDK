@@ -10,6 +10,7 @@ class PblProjectCreator(PblCommand):
 
     def configure_subparser(self, parser):
         parser.add_argument("name", help = "Name of the project you want to create")
+        parser.add_argument("--simple", action="store_true", help = "Use a minimal c file")
         parser.add_argument("--javascript", action="store_true", help = "Generate javascript related files")
 
     def run(self, args):
@@ -29,7 +30,7 @@ class PblProjectCreator(PblCommand):
 
         # Create main .c file
         with open(os.path.join(project_src, "%s.c" % (project_name)), "w") as f:
-            f.write(FILE_DUMMY_MAIN)
+            f.write(FILE_SIMPLE_MAIN if args.simple else FILE_DUMMY_MAIN)
 
         # Add wscript file
         with open(os.path.join(project_root, "wscript"), "w") as f:
@@ -84,6 +85,13 @@ def build(ctx):
 
     ctx.pbl_bundle(elf='pebble-app.elf',
                    js=ctx.path.ant_glob('src/js/**/*.js'))
+"""
+
+FILE_SIMPLE_MAIN = """#include <pebble.h>
+
+int main(void) {
+  app_event_loop();
+}
 """
 
 FILE_DUMMY_MAIN = """#include <pebble.h>

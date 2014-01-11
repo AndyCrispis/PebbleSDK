@@ -1,1 +1,1 @@
-jenkins-pebblesdk-generator-release-21-23-g8300de1
+jenkins-pebblesdk-generator-release-21-27-g9f48b75
