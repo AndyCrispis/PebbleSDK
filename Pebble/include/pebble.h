@@ -384,7 +384,9 @@ BatteryChargeState battery_state_service_peek(void);
 //! Examples/watchapps/feature_accel_discs
 //! @{
 
-typedef struct __attribute__((__packed__)) {
+//! A single accelerometer sample for all three axes including timestamp and
+//! vibration rumble status.
+typedef struct __attribute__((__packed__)) AccelData {
   //! acceleration along the x axis
   int16_t x;
   //! acceleration along the y axis
@@ -395,7 +397,7 @@ typedef struct __attribute__((__packed__)) {
   //! true if the watch vibrated when this sample was collected
   bool did_vibrate;
 
-  //! Timestamp, in milliseconds
+  //! timestamp, in milliseconds
   uint64_t timestamp;
 } AccelData;
 
@@ -423,9 +425,13 @@ typedef void (*AccelTapHandler)(AccelAxisType axis, int32_t direction);
 
 //! Valid accelerometer sampling rates, in Hz
 typedef enum {
+  //! 10 HZ sampling rate
   ACCEL_SAMPLING_10HZ = 10,
+  //! 25 HZ sampling rate [Default]
   ACCEL_SAMPLING_25HZ = 25,
+  //! 50 HZ sampling rate
   ACCEL_SAMPLING_50HZ = 50,
+  //! 100 HZ sampling rate
   ACCEL_SAMPLING_100HZ = 100,
 } AccelSamplingRate;
 
@@ -1638,11 +1644,6 @@ SniffInterval app_comm_get_sniff_interval(void);
 //! @} // group AppComm
 
 //! @addtogroup Timer Timer
-//! \brief Register timers for callbacks
-//!
-//! The Timer API provides support for calls that let you register a timer for a callback function
-//! that is called at a specified time in the future, as well as cancel an already registered timer
-//! or reschedule an already running timer at a specified time in the future.
 //! @{
 
 //! Waits for a certain amount of milliseconds
