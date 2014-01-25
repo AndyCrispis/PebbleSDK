@@ -455,6 +455,11 @@
 		10418C891642D5E600066DE0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = (
+					arm64,
+					armv7s,
+					armv7,
+				);
 				DSTROOT = /tmp/PebbleVendor.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "PebbleVendor-Prefix.pch";
@@ -474,6 +479,11 @@
 		10418C8A1642D5E600066DE0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = (
+					arm64,
+					armv7s,
+					armv7,
+				);
 				DSTROOT = /tmp/PebbleVendor.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "PebbleVendor-Prefix.pch";
