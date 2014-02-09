@@ -11,7 +11,7 @@ try:
     # NOTE: Even though we don't use websocket in this module, keep this
     #  import here for the unit tests so that they can trigger a missing 
     #  python dependency event. 
-    import websocket        
+    import websocket  
     import pebble as libpebble
     from pebble.PblProjectCreator   import (PblProjectCreator, 
                                             InvalidProjectException, 
@@ -26,7 +26,6 @@ except Exception as e:
                     level = logging.DEBUG)
     PblAnalytics.missing_python_dependency_evt(str(e))
     raise
-
 
 class PbSDKShell:
     commands = []
@@ -53,7 +52,6 @@ class PbSDKShell:
             return SDK_VERSION
         except:
             return "Development"
-        
 
     def main(self):
         parser = argparse.ArgumentParser(description = 'Pebble SDK Shell')
@@ -94,7 +92,7 @@ class PbSDKShell:
                     cmdName = 'install --logs'
                 PblAnalytics.cmd_success_evt(cmdName)
             return retval
-                
+
         except libpebble.PebbleError as e:
             PblAnalytics.cmd_fail_evt(args.command, 'pebble error')
             if args.debug:
@@ -102,18 +100,18 @@ class PbSDKShell:
             else:
                 logging.error(e)
                 return 1
-            
+
         except ConfigurationException as e:
             PblAnalytics.cmd_fail_evt(args.command, 'configuration error')
             logging.error(e)
             return 1
-        
+
         except InvalidProjectException as e:
             PblAnalytics.cmd_fail_evt(args.command, 'invalid project')
             logging.error("This command must be run from a Pebble project "
                           "directory")
             return 1
-        
+
         except OutdatedProjectException as e:
             PblAnalytics.cmd_fail_evt(args.command, 'outdated project')
             logging.error("The Pebble project directory is using an outdated "
@@ -121,7 +119,7 @@ class PbSDKShell:
             logging.error("Try running `pebble convert-project` to update the "
                           "project")
             return 1
-        
+
         except NoCompilerException as e:
             PblAnalytics.missing_tools_evt()
             logging.error("The compiler/linker tools could not be found. "
@@ -129,31 +127,32 @@ class PbSDKShell:
                           "in the Pebble SDK directory (%s)" % 
                           PblCommand().sdk_path(args))
             return 1
-        
+
         except BuildErrorException as e:
             PblAnalytics.cmd_fail_evt(args.command, 'compilation error')
             logging.error("A compilation error occurred")
             return 1
-        
+
         except AppTooBigException as e:
             PblAnalytics.cmd_fail_evt(args.command, 'application too big')
             logging.error("The built application is too big")
             return 1
-        
+
         except Exception as e:
             PblAnalytics.cmd_fail_evt(args.command, 'unhandled exception: %s' %
                                  str(e))
             logging.error(str(e))
-            
+
             # Print out stack trace if in debug mode to aid in bug reporting
             if args.debug:
                 raise
             return 1
 
-
-if __name__ == '__main__':
+def main():
     retval = PbSDKShell().main()
     if retval is None:
         retval = 0
-    sys.exit(retval)
+    return retval
 
+if __name__ == '__main__':
+    sys.exit(main())

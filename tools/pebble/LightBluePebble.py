@@ -58,12 +58,12 @@ class LightBluePebble(object):
             tup = self.rec_queue.get()
             return tup
         except Queue.Empty:
-            return (None, None, '')
+            return (None, None, None, '')
         except:
             self.bt_teardown.set()
             if self.debug_protocol:
                 log.debug("LightBlue process has shutdown (queue read)")
-            return (None, None, '')
+            return (None, None, None, '')
 
     def close(self):
         """ close the LightBlue connection process"""
@@ -162,7 +162,7 @@ class LightBluePebble(object):
                 try:
                     if self.debug_protocol:
                         log.debug("{}: {} {} ".format(endpoint, resp, rec_data))
-                    self.rec_queue.put((endpoint, resp, rec_data))
+                    self.rec_queue.put(("watch", endpoint, resp, rec_data))
 
                 except (IOError, EOFError):
                     self.BT_TEARDOWN.set()

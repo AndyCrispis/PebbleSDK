@@ -10,6 +10,7 @@ from PblCommand import PblCommand
 import PblAnalytics
 
 PEBBLE_PHONE_ENVVAR='PEBBLE_PHONE'
+PEBBLE_BTID_ENVVAR='PEBBLE_BTID'
 
 class ConfigurationException(Exception):
     pass
@@ -31,16 +32,32 @@ class LibPebbleCommand(PblCommand):
 
     def configure_subparser(self, parser):
         PblCommand.configure_subparser(self, parser)
-        parser.add_argument('--phone', type=str, default=os.getenv(PEBBLE_PHONE_ENVVAR),
-                help='The IP address or hostname of your phone - Can also be provided through PEBBLE_PHONE environment variable.')
+        parser.add_argument('--phone', type=str,
+                help='When using Developer Connection, the IP address or hostname of your phone. Can also be provided through %s environment variable.' % PEBBLE_PHONE_ENVVAR)
+        parser.add_argument('--pebble_id', type=str,
+                help='When using a direct BT connection, the watch\'s Bluetooth ID (e.g. DF38 or 01:23:45:67:DF:38). Can also be provided through %s environment variable.' % PEBBLE_BTID_ENVVAR)
+        parser.add_argument('--pair', action="store_true", help="When using a direct BT connection, attempt to pair the watch automatically")
         parser.add_argument('--verbose', type=bool, default=False, help='Prints received system logs in addition to APP_LOG')
 
     def run(self, args):
-        if not args.phone:
-            raise ConfigurationException("Argument --phone is required (Or set a PEBBLE_PHONE environment variable)")
-        self.pebble = libpebble.Pebble()
+        # Only use the envrionment variables as defaults if no command-line arguments were specified
+        # ...allowing you to leave the envrionment var(s) set at all times
+        if not args.phone and not args.pebble_id:
+            args.phone = os.getenv(PEBBLE_PHONE_ENVVAR)
+            args.pebble_id = os.getenv(PEBBLE_BTID_ENVVAR)
+
+        if not args.phone and not args.pebble_id:
+            raise ConfigurationException("No method specified to connect to watch\n- To use Developer Connection, argument --phone is required (or set the %s environment variable)\n- To use a direct BT connection, argument --pebble_id is required (or set the %s environment variable)" % (PEBBLE_PHONE_ENVVAR, PEBBLE_BTID_ENVVAR))
+
+        if args.phone and args.pebble_id:
+            raise ConfigurationException("You must specify only one method to connect to the watch - either Developer Connection (with --phone/%s) or direct via Bluetooth (with --pebble_id/%s)" % (PEBBLE_PHONE_ENVVAR, PEBBLE_BTID_ENVVAR))
+
+        self.pebble = libpebble.Pebble(args.pebble_id)
         self.pebble.set_print_pbl_logs(args.verbose)
-        self.pebble.connect_via_websocket(args.phone)
+        if args.phone:
+            self.pebble.connect_via_websocket(args.phone)
+        elif args.pebble_id:
+            self.pebble.connect_via_lightblue(pair_first=args.pair)
 
     def tail(self, interactive=False, skip_enable_app_log=False):
         if not skip_enable_app_log:
@@ -85,7 +102,7 @@ class PblInstallCommand(LibPebbleCommand):
 
     def configure_subparser(self, parser):
         LibPebbleCommand.configure_subparser(self, parser)
-        parser.add_argument('pbw_path', type=str, nargs='?', default=self.get_pbw_path(), help='Path to the pbw to install (ie: build/*.pbw)')
+        parser.add_argument('pbw_path', type=str, nargs='?', default=self.get_pbw_path(), help='Path to the pbw to install (e.g. build/*.pbw)')
         parser.add_argument('--logs', action='store_true', help='Display logs after installing the app')
 
     def run(self, args):
@@ -98,11 +115,12 @@ class PblInstallCommand(LibPebbleCommand):
         if args.logs:
             self.pebble.app_log_enable()
 
-        success = self.pebble.install_bundle_ws(args.pbw_path)
+        success = self.pebble.install_app(args.pbw_path)
 
-        # Send the phone OS version to analytics
-        phoneInfoStr = self.pebble.get_phone_info()
-        PblAnalytics.phone_info_evt(phoneInfoStr = phoneInfoStr)
+        if self.pebble.is_phone_info_available():
+            # Send the phone OS version to analytics
+            phoneInfoStr = self.pebble.get_phone_info()
+            PblAnalytics.phone_info_evt(phoneInfoStr=phoneInfoStr)
 
         if success and args.logs:
             self.tail(skip_enable_app_log=True)

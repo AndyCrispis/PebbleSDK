@@ -115,7 +115,7 @@ $(document).ready(function(){initNavTree('group___data_logging.html','');});
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Enables logging data asynchronously to a mobile app. </p>
 <p>In Pebble OS, data logging is a data storage and transfer subsystem that allows watchapps to save data on non-volatile storage devices when the phone is not available to process it. The API provides your watchapp with a mechanism for short-term data buffering for asynchronous data transmission to a mobile app.</p>
-<p>Using this API, your Pebble watchapp can create an arbitrary number of logs, but you’re limited in the amount of storage space you can use. Note that approximately 500K is available for data logging, which is shared among all watchapps that use it.</p>
+<p>Using this API, your Pebble watchapp can create an arbitrary number of logs, but you’re limited in the amount of storage space you can use. Note that approximately 640K is available for data logging, which is shared among all watchapps that use it. This value is subject to change in the future. When the data spool is full, an app will start overwriting its own data. An app cannot overwrite another apps's data. However, the other app might have 0 bytes for data logging.</p>
 <p>Your app can log data to a session, either creating, adding or deleting data to that session. The data is then sent to the associated phone application at the earliest convenience. If a phone is available, the data is sent directly to the phone. Otherwise, it is saved to the watch storage until the watch is connected to a phone.</p>
 <p>For example:</p>
 <p>To create a data logging session for 4-byte unsigned integers with a tag of 0x1234, you would do this: </p>
@@ -311,7 +311,7 @@ $(document).ready(function(){initNavTree('group___data_logging.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Thu Jan 23 2014 20:51:10 for Pebble SDK by
+    <li class="footer">Generated on Mon Feb 3 2014 10:01:54 for Pebble SDK by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.5 </li>
   </ul>

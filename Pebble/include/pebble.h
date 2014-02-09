@@ -443,7 +443,7 @@ typedef enum {
 int accel_service_peek(AccelData *data);
 
 //! Change the accelerometer sampling rate.
-//! @param rate The sampling rate in Hz (1Hz, 10Hz, 25Hz, 50Hz, and 100Hz possible)
+//! @param rate The sampling rate in Hz (10Hz, 25Hz, 50Hz, and 100Hz possible)
 int accel_service_set_sampling_rate(AccelSamplingRate rate);
 
 //! Change the number of samples buffered between each accelerometer data event
@@ -508,8 +508,10 @@ void tick_timer_service_unsubscribe(void);
 //! a mobile app.
 //!
 //! Using this API, your Pebble watchapp can create an arbitrary number of logs, but you’re limited in
-//! the amount of storage space you can use. Note that approximately 500K is available for data
-//! logging, which is shared among all watchapps that use it.
+//! the amount of storage space you can use. Note that approximately 640K is available for data
+//! logging, which is shared among all watchapps that use it. This value is subject to change in the 
+//! future. When the data spool is full, an app will start overwriting its own data. An app cannot 
+//! overwrite another apps's data. However, the other app might have 0 bytes for data logging.
 //!
 //! Your app can log data to a session, either creating, adding or deleting data to that session.
 //! The data is then sent to the associated phone application at the earliest convenience.
@@ -2429,6 +2431,16 @@ typedef struct TextLayout TextLayout;
 //! Pointer to opaque text layout cache data structure
 typedef TextLayout* GTextLayoutCacheRef;
 
+//! Draw text into the current graphics context, using the context's current text color.
+//! The text will be drawn inside a box with the specified dimensions and
+//! configuration, with clipping occuring automatically.
+//! @param ctx The destination graphics context in which to draw
+//! @param text The zero terminated UTF-8 string to draw
+//! @param font The font in which the text should be set
+//! @param box The bounding box in which to draw the text. The first line of text will be drawn against the top of the box.
+//! @param overflow_mode The overflow behavior, in case the text is larger than what fits inside the box.
+//! @param alignment The horizontal alignment of the text
+//! @param layout Optional layout cache data. Supply `NULL` to ignore the layout caching mechanism.
 void graphics_draw_text(GContext* ctx, const char* text, GFont const font, const GRect box, const GTextOverflowMode overflow_mode, const GTextAlignment alignment, const GTextLayoutCacheRef layout);
 
 //! Obtain the maximum size that a text with given font, overflow mode and alignment occupies within a given rectangular constraint.
